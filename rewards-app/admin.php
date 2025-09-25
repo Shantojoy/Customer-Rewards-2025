@@ -177,9 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
             $stmt->close();
-            $emailParam = $email === '' ? null : $email;
-            $stmt = $conn->prepare('INSERT INTO customers (name, phone, email) VALUES (?, ?, ?)');
-            $stmt->bind_param('sss', $name, $phone, $emailParam);
+            $stmt = $conn->prepare('INSERT INTO customers (name, phone, email) VALUES (?, ?, NULLIF(?, ""))');
+            $stmt->bind_param('sss', $name, $phone, $email);
             $stmt->execute();
             $newCustomerId = $stmt->insert_id;
             $stmt->close();
@@ -216,9 +215,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
             $stmt->close();
-            $emailParam = $email === '' ? null : $email;
-            $stmt = $conn->prepare('UPDATE customers SET name = ?, phone = ?, email = ? WHERE id = ?');
-            $stmt->bind_param('sssi', $name, $phone, $emailParam, $customerId);
+            $stmt = $conn->prepare('UPDATE customers SET name = ?, phone = ?, email = NULLIF(?, "") WHERE id = ?');
+            $stmt->bind_param('sssi', $name, $phone, $email, $customerId);
             $stmt->execute();
             $stmt->close();
             $selectedCustomerId = $customerId;
