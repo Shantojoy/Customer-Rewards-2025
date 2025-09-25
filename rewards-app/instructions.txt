@@ -25,5 +25,6 @@ Rewards Points System Setup Guide
 
 6. Managing the program
    - Superadmins can add, edit, and delete other admin accounts from the dashboard.
-   - Administrators can add new customers, update their details, log visits, and review complete visit histories with a printable summary.
-   - Use the customer management tools to award, redeem, and adjust points balances as needed. A visit log entry can be created each time a customer comes into the shop so you can track repeat visits.
+   - Superadmins control customer records and visit logs, including creating new customers, updating their information, and removing accounts when necessary.
+   - Cashiers can search for customers and award, redeem, or subtract points but cannot change customer profiles or log visits.
+   - Use the customer management tools to award, redeem, and adjust points balances (superadmins may also set a custom balance). A visit log entry can be created each time a customer comes into the shop so repeat visits are tracked.

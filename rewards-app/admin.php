@@ -142,15 +142,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
             } elseif ($action === 'log_visit') {
-                $stmt = $conn->prepare('INSERT INTO customer_visits (customer_id, admin_id) VALUES (?, ?)');
-                $stmt->bind_param('ii', $customerId, $adminId);
-                $stmt->execute();
-                $stmt->close();
-                add_success("Logged a new visit for {$customer['name']}.");
+                if ($adminRole !== 'superadmin') {
+                    add_error('Only superadmins can log customer visits.');
+                } else {
+                    $stmt = $conn->prepare('INSERT INTO customer_visits (customer_id, admin_id) VALUES (?, ?)');
+                    $stmt->bind_param('ii', $customerId, $adminId);
+                    $stmt->execute();
+                    $stmt->close();
+                    add_success("Logged a new visit for {$customer['name']}.");
+                }
             }
             break;
 
         case 'create_customer':
+            if ($adminRole !== 'superadmin') {
+                add_error('Only superadmins can create customer records.');
+                break;
+            }
             $name = trim($_POST['customer_name'] ?? '');
             $phoneRaw = trim($_POST['customer_phone'] ?? '');
             $email = trim($_POST['customer_email'] ?? '');
@@ -179,6 +187,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'update_customer':
+            if ($adminRole !== 'superadmin') {
+                add_error('Only superadmins can update customer records.');
+                break;
+            }
             $customerId = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
             $name = trim($_POST['customer_name'] ?? '');
             $phoneRaw = trim($_POST['customer_phone'] ?? '');
@@ -212,6 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'delete_customer':
+            if ($adminRole !== 'superadmin') {
+                add_error('Only superadmins can delete customer records.');
+                break;
+            }
             $customerId = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
             if ($customerId <= 0) {
                 add_error('Invalid customer selection.');
@@ -561,10 +577,15 @@ if ($customerQuery) {
                                     </form>
                                 <?php endif; ?>
 
-                                <form method="POST" class="flex flex-col md:flex-row md:items-center gap-3">
-                                    <input type="hidden" name="customer_id" value="<?= $selectedCustomer['id'] ?>">
-                                    <button name="action" value="log_visit" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">Log Visit</button>
-                                </form>
+                                <?php if ($adminRole === 'superadmin'): ?>
+                                    <form method="POST" class="flex flex-col md:flex-row md:items-center gap-3">
+                                        <input type="hidden" name="customer_id" value="<?= $selectedCustomer['id'] ?>">
+                                        <?php if ($searchTerm !== ''): ?>
+                                            <input type="hidden" name="search_term" value="<?= htmlspecialchars($searchTerm) ?>">
+                                        <?php endif; ?>
+                                        <button name="action" value="log_visit" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">Log Visit</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -624,22 +645,26 @@ if ($customerQuery) {
                         <a href="?customer_id=<?= $selectedCustomer['id'] ?>" class="text-sm text-blue-300 hover:text-blue-200">Refresh Profile</a>
                     <?php endif; ?>
                 </div>
-                <form method="POST" class="grid gap-3 print:hidden">
-                    <h3 class="font-semibold">Add New Customer</h3>
-                    <div class="grid gap-2">
-                        <label class="text-sm text-slate-300" for="new_customer_name">Name</label>
-                        <input id="new_customer_name" type="text" name="customer_name" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700" required>
-                    </div>
-                    <div class="grid gap-2">
-                        <label class="text-sm text-slate-300" for="new_customer_phone">Phone</label>
-                        <input id="new_customer_phone" type="tel" name="customer_phone" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700" required>
-                    </div>
-                    <div class="grid gap-2">
-                        <label class="text-sm text-slate-300" for="new_customer_email">Email (optional)</label>
-                        <input id="new_customer_email" type="email" name="customer_email" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700">
-                    </div>
-                    <button name="action" value="create_customer" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-xl font-semibold">Add Customer</button>
-                </form>
+                <?php if ($adminRole === 'superadmin'): ?>
+                    <form method="POST" class="grid gap-3 print:hidden">
+                        <h3 class="font-semibold">Add New Customer</h3>
+                        <div class="grid gap-2">
+                            <label class="text-sm text-slate-300" for="new_customer_name">Name</label>
+                            <input id="new_customer_name" type="text" name="customer_name" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700" required>
+                        </div>
+                        <div class="grid gap-2">
+                            <label class="text-sm text-slate-300" for="new_customer_phone">Phone</label>
+                            <input id="new_customer_phone" type="tel" name="customer_phone" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700" required>
+                        </div>
+                        <div class="grid gap-2">
+                            <label class="text-sm text-slate-300" for="new_customer_email">Email (optional)</label>
+                            <input id="new_customer_email" type="email" name="customer_email" class="px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700">
+                        </div>
+                        <button name="action" value="create_customer" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-xl font-semibold">Add Customer</button>
+                    </form>
+                <?php else: ?>
+                    <p class="text-sm text-slate-300 print:hidden">Customer records can only be created or edited by a superadmin.</p>
+                <?php endif; ?>
 
                 <div class="overflow-x-auto bg-slate-900/40 rounded-2xl">
                     <table class="min-w-full text-left text-sm">
@@ -665,13 +690,17 @@ if ($customerQuery) {
                                         <td class="px-4 py-3 text-slate-300"><?= (int)$customer['visit_count'] ?></td>
                                         <td class="px-4 py-3 text-slate-300"><?= (int)$customer['balance'] ?></td>
                                         <td class="px-4 py-3 text-sm text-slate-200">
-                                            <div class="flex flex-wrap gap-2">
+                                            <div class="flex flex-wrap items-center gap-2">
                                                 <a href="?customer_id=<?= $customer['id'] ?>" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg">View</a>
-                                                <button type="button" data-modal="edit-customer-<?= $customer['id'] ?>" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg modal-trigger">Edit</button>
-                                                <form method="POST" onsubmit="return confirm('Delete this customer?');">
-                                                    <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
-                                                    <button name="action" value="delete_customer" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded-lg">Delete</button>
-                                                </form>
+                                                <?php if ($adminRole === 'superadmin'): ?>
+                                                    <button type="button" data-modal="edit-customer-<?= $customer['id'] ?>" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg modal-trigger">Edit</button>
+                                                    <form method="POST" class="inline" onsubmit="return confirm('Delete this customer?');">
+                                                        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+                                                        <button name="action" value="delete_customer" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded-lg">Delete</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span class="text-xs uppercase tracking-wide text-slate-400">View only</span>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -805,29 +834,31 @@ if ($customerQuery) {
         });
     </script>
 
-    <?php foreach ($customers as $customer): ?>
-        <template id="edit-customer-<?= $customer['id'] ?>">
-            <form method="POST" class="space-y-4">
-                <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
-                <div class="space-y-2">
-                    <label class="text-sm text-slate-300" for="customer-name-<?= $customer['id'] ?>">Name</label>
-                    <input id="customer-name-<?= $customer['id'] ?>" type="text" name="customer_name" value="<?= htmlspecialchars($customer['name']) ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700" required>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm text-slate-300" for="customer-phone-<?= $customer['id'] ?>">Phone</label>
-                    <input id="customer-phone-<?= $customer['id'] ?>" type="tel" name="customer_phone" value="<?= htmlspecialchars($customer['phone']) ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700" required>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm text-slate-300" for="customer-email-<?= $customer['id'] ?>">Email</label>
-                    <input id="customer-email-<?= $customer['id'] ?>" type="email" name="customer_email" value="<?= htmlspecialchars($customer['email'] ?? '') ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
-                </div>
-                <div class="flex justify-end gap-3">
-                    <button type="button" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg" onclick="document.querySelector('[data-modal-close]')?.click();">Cancel</button>
-                    <button name="action" value="update_customer" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg">Save Changes</button>
-                </div>
-            </form>
-        </template>
-    <?php endforeach; ?>
+    <?php if ($adminRole === 'superadmin'): ?>
+        <?php foreach ($customers as $customer): ?>
+            <template id="edit-customer-<?= $customer['id'] ?>">
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300" for="customer-name-<?= $customer['id'] ?>">Name</label>
+                        <input id="customer-name-<?= $customer['id'] ?>" type="text" name="customer_name" value="<?= htmlspecialchars($customer['name']) ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700" required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300" for="customer-phone-<?= $customer['id'] ?>">Phone</label>
+                        <input id="customer-phone-<?= $customer['id'] ?>" type="tel" name="customer_phone" value="<?= htmlspecialchars($customer['phone']) ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700" required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300" for="customer-email-<?= $customer['id'] ?>">Email</label>
+                        <input id="customer-email-<?= $customer['id'] ?>" type="email" name="customer_email" value="<?= htmlspecialchars($customer['email'] ?? '') ?>" class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg" onclick="document.querySelector('[data-modal-close]')?.click();">Cancel</button>
+                        <button name="action" value="update_customer" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg">Save Changes</button>
+                    </div>
+                </form>
+            </template>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     <?php foreach ($admins as $admin): ?>
         <template id="edit-admin-<?= $admin['id'] ?>">
