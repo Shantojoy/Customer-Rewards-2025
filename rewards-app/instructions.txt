@@ -1,0 +1,29 @@
+Rewards Points System Setup Guide
+=================================
+
+1. Import the database schema
+   - Create a MySQL user with permissions to create databases and tables.
+   - Run the commands in `database/schema.sql` against your MySQL server to create the `rewards_system` database, tables, and default administrator account.
+
+2. Configure database credentials
+   - Open `config.php` and update the `$dbHost`, `$dbUser`, `$dbPass`, and `$dbName` variables so they match your MySQL environment.
+   - The application expects the database name to be `rewards_system` unless you change it in the configuration file.
+
+3. Default login credentials
+   - Username: `admin`
+   - Password: `admin123`
+   - These credentials map to the default superadmin user created by the schema script.
+
+4. Security recommendations
+   - Change the default administrator password immediately after the first login from the admin dashboard.
+   - Create separate accounts for cashiers with the `cashier` role if you need to restrict permissions.
+
+5. Running the application
+   - Deploy the contents of the `rewards-app` folder to a PHP-enabled web server with access to the configured MySQL database.
+   - Ensure the server can write to the database and that PHP sessions are enabled.
+   - Access `/login.php` for the administrator dashboard and `/index.php` for the customer-facing kiosk display.
+
+6. Managing the program
+   - Superadmins can add, edit, and delete other admin accounts from the dashboard.
+   - Administrators can add new customers, update their details, log visits, and review complete visit histories with a printable summary.
+   - Use the customer management tools to award, redeem, and adjust points balances as needed. A visit log entry can be created each time a customer comes into the shop so you can track repeat visits.
