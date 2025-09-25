@@ -67,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             $stmt = $conn->prepare('INSERT INTO customers (phone, name, email) VALUES (?, ?, NULLIF(?, ""))');
-            $stmt->bind_param('sss', $phoneInput, $name, $email);
+            $emailParam = $email;
+            $stmt->bind_param('sss', $phoneInput, $name, $emailParam);
             if ($stmt->execute()) {
                 $successMessage = 'Welcome! You have been enrolled in the rewards program.';
                 $customer = [
